@@ -1,15 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.5.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="$(MicrosoftAspNetCorePackageVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="$(MicrosoftEntityFrameworkCorePackageVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.13" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\BaGet.Aliyun\BaGet.Aliyun.csproj" />
     <ProjectReference Include="..\BaGet.Aws\BaGet.Aws.csproj" />
@@ -23,5 +20,15 @@
     <ProjectReference Include="..\BaGet.Web\BaGet.Web.csproj" />
     <ProjectReference Include="..\BaGet.Protocol\BaGet.Protocol.csproj" />
   </ItemGroup>
-
+  <ItemGroup>
+    <None Update="baget.db">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="baget.db-shm">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="baget.db-wal">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

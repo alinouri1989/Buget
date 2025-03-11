@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace BaGet
 {
+
     public static class BaGetApplicationExtensions
     {
         public static BaGetApplication AddFileStorage(this BaGetApplication app)

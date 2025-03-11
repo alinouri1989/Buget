@@ -24,12 +24,18 @@ namespace BaGet.Core
             _searchBuilder = searchBuilder ?? throw new ArgumentNullException(nameof(searchBuilder));
         }
 
-        public async Task<SearchResponse> SearchAsync(SearchRequest request,  CancellationToken cancellationToken)
+        public async Task<SearchResponse> SearchAsync(SearchRequest request, CancellationToken cancellationToken)
         {
             var frameworks = GetCompatibleFrameworksOrNull(request.Framework);
+            LogFileExtensions.WriteToFile(frameworks);
 
             IQueryable<Package> search = _context.Packages;
+            LogFileExtensions.WriteToFile(search);
+
             search = ApplySearchQuery(search, request.Query);
+
+            LogFileExtensions.WriteToFile(search);
+
             search = ApplySearchFilters(
                 search,
                 request.IncludePrerelease,
@@ -37,12 +43,15 @@ namespace BaGet.Core
                 request.PackageType,
                 frameworks);
 
+            LogFileExtensions.WriteToFile(search);
+
             var packageIds = search
                 .Select(p => p.Id)
                 .Distinct()
                 .OrderBy(id => id)
                 .Skip(request.Skip)
                 .Take(request.Take);
+            LogFileExtensions.WriteToFile(search);
 
             // This query MUST fetch all versions for each package that matches the search,
             // otherwise the results for a package's latest version may be incorrect.
@@ -53,12 +62,17 @@ namespace BaGet.Core
             if (_context.SupportsLimitInSubqueries)
             {
                 search = _context.Packages.Where(p => packageIds.Contains(p.Id));
+                LogFileExtensions.WriteToFile(search);
+
             }
             else
             {
                 var packageIdResults = await packageIds.ToListAsync(cancellationToken);
+                LogFileExtensions.WriteToFile(search);
 
                 search = _context.Packages.Where(p => packageIdResults.Contains(p.Id));
+                LogFileExtensions.WriteToFile(search);
+
             }
 
             search = ApplySearchFilters(
@@ -67,12 +81,15 @@ namespace BaGet.Core
                 request.IncludeSemVer2,
                 request.PackageType,
                 frameworks);
+            LogFileExtensions.WriteToFile(search);
 
             var results = await search.ToListAsync(cancellationToken);
             var groupedResults = results
                 .GroupBy(p => p.Id, StringComparer.OrdinalIgnoreCase)
                 .Select(group => new PackageRegistration(group.Key, group.ToList()))
                 .ToList();
+
+            LogFileExtensions.WriteToFile(groupedResults);
 
             return _searchBuilder.BuildSearch(groupedResults);
         }

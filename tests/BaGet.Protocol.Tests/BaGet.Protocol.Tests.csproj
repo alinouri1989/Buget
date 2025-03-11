@@ -1,13 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\BaGet.Protocol\BaGet.Protocol.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <Compile Update="TestData.Designer.cs">
       <DependentUpon>TestData.resx</DependentUpon>
@@ -15,12 +12,10 @@
       <AutoGen>True</AutoGen>
     </Compile>
   </ItemGroup>
-
   <ItemGroup>
     <EmbeddedResource Update="TestData.resx">
       <LastGenOutput>TestData.Designer.cs</LastGenOutput>
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
   </ItemGroup>
-
 </Project>

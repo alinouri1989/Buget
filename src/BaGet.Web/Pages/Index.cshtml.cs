@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading;
@@ -58,7 +58,7 @@ namespace BaGet.Web
                     Query = Query,
                 },
                 cancellationToken);
-
+            LogFileExtensions.WriteToFile(search.Data);
             Packages = search.Data;
 
             return Page();
