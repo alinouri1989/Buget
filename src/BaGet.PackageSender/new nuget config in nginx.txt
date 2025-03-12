@@ -1,0 +1,71 @@
+proxy_cache_path /www/wwwroot/nuget.apnam.ir/proxy_cache_dir levels=1:2 keys_zone=nuget_apnam_ir_cache:20m inactive=1d max_size=5g;  
+
+server {  
+    listen 80;  
+    listen [::]:80;  
+
+    listen 443 ssl http2;  
+    listen [::]:443 ssl http2;  
+
+    server_name nuget.apnam.ir;  
+    index index.php index.html index.htm default.php default.htm default.html;  
+    root /www/wwwroot/nuget.apnam.ir;  
+
+    # CERTIFICATE CONFIGURATION  
+    ssl_certificate /www/server/panel/vhost/cert/nuget.apnam.ir/fullchain.pem;  
+    ssl_certificate_key /www/server/panel/vhost/cert/nuget.apnam.ir/privkey.pem;  
+    ssl_protocols TLSv1.2 TLSv1.3;  
+    ssl_ciphers EECDH+CHACHA20:EECDH+AES128:EECDH+AES256:!MD5;  
+    ssl_prefer_server_ciphers on;  
+    ssl_session_cache shared:SSL:10m;  
+    ssl_session_timeout 10m;  
+    add_header Strict-Transport-Security "max-age=31536000";  
+
+    # Redirect HTTP to HTTPS  
+    error_page 497 https://$host$request_uri;  
+
+    # PROXY CONFIGURATION  
+    location / {  
+        proxy_pass http://localhost:5090;  
+
+        # Set the correct Host header  
+        proxy_set_header Host $host;  
+
+        # Set the client's real IP address  
+        proxy_set_header X-Real-IP $remote_addr;  
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;  
+
+        # Inform BaGet of the protocol (HTTP or HTTPS)  
+        proxy_set_header X-Forwarded-Proto $scheme;  
+
+        # Handle WebSocket connections  
+        proxy_http_version 1.1;  
+        proxy_set_header Upgrade $http_upgrade;  
+        proxy_set_header Connection "upgrade";  
+
+        # Timeouts  
+        proxy_connect_timeout 60s;  
+        proxy_send_timeout 600s;  
+        proxy_read_timeout 600s;  
+    }  
+
+    # Block access to sensitive files  
+    location ~ ^/(\.user.ini|\.htaccess|\.git|\.env|\.svn|\.project|LICENSE|README.md) {  
+        return 404;  
+    }  
+
+    # SSL certificate verification directory  
+    location /.well-known {  
+        allow all;  
+        root /www/wwwroot/nuget.apnam.ir;  
+    }  
+
+    # Block sensitive files in the verification directory  
+    if ($uri ~ "^/\.well-known/.*\.(php|jsp|py|js|css|lua|ts|go|zip|tar\.gz|rar|7z|sql|bak)$") {  
+        return 403;  
+    }  
+
+    # Logs  
+    access_log /www/wwwlogs/nuget.apnam.ir.log;  
+    error_log /www/wwwlogs/nuget.apnam.ir.error.log;  
+}
