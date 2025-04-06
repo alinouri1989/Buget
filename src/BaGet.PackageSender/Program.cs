@@ -1,16 +1,16 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 
 namespace NuGetPackagePusher
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             // Specify the folder path containing .nupkg files  
-            string folderPath = @"D:\packages";
+            string folderPath = @"D:\OfflinePackages";
 
             // Specify the NuGet server URL and API key  
-            string nugetServerUrl = "https://localhost:7241/v3/index.json";
+            string nugetServerUrl = "https://nuget.apnam.ir/v3/index.json";
             string apiKey = "ali_api_key";
 
             // Ensure the folder exists  
@@ -21,7 +21,7 @@ namespace NuGetPackagePusher
             }
 
             // Get all .nupkg files in the folder  
-            string[] packageFiles = Directory.GetFiles(folderPath, "*.nupkg", SearchOption.AllDirectories);
+            string[] packageFiles = Directory.GetFiles(folderPath, "*.nupkg");
 
             if (packageFiles.Length == 0)
             {
