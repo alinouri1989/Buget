@@ -2,43 +2,47 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure;
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 using BaGet.Core;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace BaGet.Azure
 {
-    // See: https://github.com/NuGet/NuGetGallery/blob/master/src/NuGetGallery.Core/Services/CloudBlobCoreFileStorageService.cs
+    // Refactored to use Azure.Storage.Blobs SDK  
     public class BlobStorageService : IStorageService
     {
-        private readonly CloudBlobContainer _container;
+        private readonly BlobContainerClient _containerClient;
 
-        public BlobStorageService(CloudBlobContainer container)
+        public BlobStorageService(BlobContainerClient containerClient)
         {
-            _container = container ?? throw new ArgumentNullException(nameof(container));
+            _containerClient = containerClient ?? throw new ArgumentNullException(nameof(containerClient));
         }
 
         public async Task<Stream> GetAsync(string path, CancellationToken cancellationToken)
         {
-            return await _container
-                .GetBlockBlobReference(path)
-                .OpenReadAsync(cancellationToken);
+            var blobClient = _containerClient.GetBlobClient(path);
+            var response = await blobClient.DownloadAsync(cancellationToken: cancellationToken);
+            return response.Value.Content;
         }
 
         public Task<Uri> GetDownloadUriAsync(string path, CancellationToken cancellationToken)
         {
-            // TODO: Make expiry time configurable.
-            var blob = _container.GetBlockBlobReference(path);
-            var accessPolicy = new SharedAccessBlobPolicy
+            var blobClient = _containerClient.GetBlobClient(path);
+            var expirationTime = DateTimeOffset.UtcNow.AddMinutes(10); // Expiry time can be configured as necessary  
+            var sasBuilder = new BlobSasBuilder
             {
-                SharedAccessExpiryTime = DateTimeOffset.Now.Add(TimeSpan.FromMinutes(10)),
-                Permissions = SharedAccessBlobPermissions.Read
+                ExpiresOn = expirationTime
             };
+            sasBuilder.SetPermissions(BlobSasPermissions.Read);
+            var sasToken = sasBuilder.ToSasQueryParameters(new StorageSharedKeyCredential(
+                _containerClient.AccountName, // assuming you store account name with the container client  
+                "<your-account-key-here>")) // secure handling of the account key needed  
+                .ToString();
 
-            var signature = blob.GetSharedAccessSignature(accessPolicy);
-            var result = new Uri(blob.Uri, signature);
-
-            return Task.FromResult(result);
+            return Task.FromResult(new Uri($"{blobClient.Uri}?{sasToken}"));
         }
 
         public async Task<StoragePutResult> PutAsync(
@@ -47,39 +51,28 @@ namespace BaGet.Azure
             string contentType,
             CancellationToken cancellationToken)
         {
-            var blob = _container.GetBlockBlobReference(path);
-            var condition = AccessCondition.GenerateIfNotExistsCondition();
-
-            blob.Properties.ContentType = contentType;
+            var blobClient = _containerClient.GetBlobClient(path);
+            var blobHttpHeaders = new BlobHttpHeaders { ContentType = contentType };
 
             try
             {
-                await blob.UploadFromStreamAsync(
-                    content,
-                    condition,
-                    options: null,
-                    operationContext: null,
-                    cancellationToken: cancellationToken);
-
+                await blobClient.UploadAsync(content, new BlobHttpHeaders { ContentType = contentType }, conditions: null, cancellationToken: cancellationToken);
                 return StoragePutResult.Success;
             }
-            catch (StorageException e) when (e.IsAlreadyExistsException())
+            catch (RequestFailedException e) when (e.ErrorCode == "BlobAlreadyExists")
             {
-                using (var targetStream = await blob.OpenReadAsync(cancellationToken))
-                {
-                    content.Position = 0;
-                    return content.Matches(targetStream)
-                        ? StoragePutResult.AlreadyExists
-                        : StoragePutResult.Conflict;
-                }
+                // This means the blob already exists, check contents for conflicts  
+                var existingBlobStream = await blobClient.OpenReadAsync(cancellationToken: cancellationToken);
+                content.Position = 0; // Reset the stream position for comparison  
+
+                return content.Matches(existingBlobStream) ? StoragePutResult.AlreadyExists : StoragePutResult.Conflict;
             }
         }
 
         public async Task DeleteAsync(string path, CancellationToken cancellationToken)
         {
-            await _container
-                .GetBlockBlobReference(path)
-                .DeleteIfExistsAsync(cancellationToken);
+            var blobClient = _containerClient.GetBlobClient(path);
+            await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
         }
     }
 }

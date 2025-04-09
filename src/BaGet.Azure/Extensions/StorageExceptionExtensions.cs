@@ -1,30 +1,41 @@
 using System.Net;
+using Azure;
+using Azure.Data.Tables;
 
 namespace BaGet.Azure
 {
-    using StorageException = Microsoft.WindowsAzure.Storage.StorageException;
-    using TableStorageException = Microsoft.Azure.Cosmos.Table.StorageException;
-
     internal static class StorageExceptionExtensions
     {
-        public static bool IsAlreadyExistsException(this StorageException e)
+        /// <summary>  
+        /// Checks if the exception indicates that the resource already exists.  
+        /// </summary>  
+        public static bool IsAlreadyExistsException(this RequestFailedException e)
         {
-            return e?.RequestInformation?.HttpStatusCode == (int?)HttpStatusCode.Conflict;
+            return e.Status == (int)HttpStatusCode.Conflict;
         }
 
-        public static bool IsNotFoundException(this TableStorageException e)
+        /// <summary>  
+        /// Checks if the exception indicates that the resource was not found.  
+        /// </summary>  
+        public static bool IsNotFoundException(this RequestFailedException e)
         {
-            return e?.RequestInformation?.HttpStatusCode == (int?)HttpStatusCode.NotFound;
+            return e.Status == (int)HttpStatusCode.NotFound;
         }
 
-        public static bool IsAlreadyExistsException(this TableStorageException e)
+        /// <summary>  
+        /// Checks if the exception indicates that the resource already exists.  
+        /// </summary>  
+        public static bool IsAlreadyExistsException(this TableTransactionFailedException e)
         {
-            return e?.RequestInformation?.HttpStatusCode == (int?)HttpStatusCode.Conflict;
+            return e.Status == (int)HttpStatusCode.Conflict;
         }
 
-        public static bool IsPreconditionFailedException(this TableStorageException e)
+        /// <summary>  
+        /// Checks if the exception indicates that a precondition for the operation failed.  
+        /// </summary>  
+        public static bool IsPreconditionFailedException(this RequestFailedException e)
         {
-            return e?.RequestInformation?.HttpStatusCode == (int?)HttpStatusCode.PreconditionFailed;
+            return e.Status == (int)HttpStatusCode.PreconditionFailed;
         }
     }
 }

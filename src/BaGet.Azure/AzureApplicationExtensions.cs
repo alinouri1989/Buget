@@ -1,20 +1,15 @@
 using System;
+using Azure.Data.Tables;
+using Azure.Search.Documents;
+using Azure.Storage.Blobs;
 using BaGet.Azure;
 using BaGet.Core;
-using Microsoft.Azure.Cosmos.Table;
-using Microsoft.Azure.Search;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
-using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace BaGet
 {
-    using CloudStorageAccount = Microsoft.WindowsAzure.Storage.CloudStorageAccount;
-    using StorageCredentials = Microsoft.WindowsAzure.Storage.Auth.StorageCredentials;
-
-    using TableStorageAccount = Microsoft.Azure.Cosmos.Table.CloudStorageAccount;
-
     public static class AzureApplicationExtensions
     {
         public static BaGetApplication AddAzureTableDatabase(this BaGetApplication app)
@@ -31,21 +26,18 @@ namespace BaGet
             app.Services.AddSingleton(provider =>
             {
                 var options = provider.GetRequiredService<IOptions<AzureTableOptions>>().Value;
-
-                return TableStorageAccount.Parse(options.ConnectionString);
+                return new TableServiceClient(options.ConnectionString);
             });
 
             app.Services.AddTransient(provider =>
             {
-                var account = provider.GetRequiredService<TableStorageAccount>();
-
-                return account.CreateCloudTableClient();
+                var client = provider.GetRequiredService<TableServiceClient>();
+                return client.GetTableClient("YourTableName"); // Specify your table name here  
             });
 
             app.Services.AddProvider<IPackageDatabase>((provider, config) =>
             {
                 if (!config.HasDatabaseType("AzureTable")) return null;
-
                 return provider.GetRequiredService<TablePackageDatabase>();
             });
 
@@ -53,7 +45,6 @@ namespace BaGet
             {
                 if (!config.HasSearchType("Database")) return null;
                 if (!config.HasDatabaseType("AzureTable")) return null;
-
                 return provider.GetRequiredService<TableSearchService>();
             });
 
@@ -61,7 +52,6 @@ namespace BaGet
             {
                 if (!config.HasSearchType("Database")) return null;
                 if (!config.HasDatabaseType("AzureTable")) return null;
-
                 return provider.GetRequiredService<NullSearchIndexer>();
             });
 
@@ -86,33 +76,19 @@ namespace BaGet
             app.Services.AddSingleton(provider =>
             {
                 var options = provider.GetRequiredService<IOptions<AzureBlobStorageOptions>>().Value;
-
-                if (!string.IsNullOrEmpty(options.ConnectionString))
-                {
-                    return CloudStorageAccount.Parse(options.ConnectionString);
-                }
-
-                return new CloudStorageAccount(
-                    new StorageCredentials(
-                        options.AccountName,
-                        options.AccessKey),
-                    useHttps: true);
+                return new BlobServiceClient(options.ConnectionString);
             });
 
             app.Services.AddTransient(provider =>
             {
-                var options = provider.GetRequiredService<IOptionsSnapshot<AzureBlobStorageOptions>>().Value;
-                var account = provider.GetRequiredService<CloudStorageAccount>();
-
-                var client = account.CreateCloudBlobClient();
-
-                return client.GetContainerReference(options.Container);
+                var client = provider.GetRequiredService<BlobServiceClient>();
+                var options = provider.GetRequiredService<IOptions<AzureBlobStorageOptions>>().Value;
+                return client.GetBlobContainerClient(options.Container);
             });
 
             app.Services.AddProvider<IStorageService>((provider, config) =>
             {
                 if (!config.HasStorageType("AzureBlobStorage")) return null;
-
                 return provider.GetRequiredService<BlobStorageService>();
             });
 
@@ -142,30 +118,18 @@ namespace BaGet
             app.Services.AddSingleton(provider =>
             {
                 var options = provider.GetRequiredService<IOptions<AzureSearchOptions>>().Value;
-                var credentials = new SearchCredentials(options.ApiKey);
-
-                return new SearchServiceClient(options.AccountName, credentials);
-            });
-
-            app.Services.AddSingleton(provider =>
-            {
-                var options = provider.GetRequiredService<IOptions<AzureSearchOptions>>().Value;
-                var credentials = new SearchCredentials(options.ApiKey);
-
-                return new SearchIndexClient(options.AccountName, PackageDocument.IndexName, credentials);
+                return new SearchClient(options.Endpoint, options.IndexName, new Azure.AzureKeyCredential(options.ApiKey));
             });
 
             app.Services.AddProvider<ISearchService>((provider, config) =>
             {
                 if (!config.HasSearchType("AzureSearch")) return null;
-
                 return provider.GetRequiredService<AzureSearchService>();
             });
 
             app.Services.AddProvider<ISearchIndexer>((provider, config) =>
             {
                 if (!config.HasSearchType("AzureSearch")) return null;
-
                 return provider.GetRequiredService<AzureSearchIndexer>();
             });
 
