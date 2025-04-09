@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGet.Protocol.Models;
+using NuGet.Versioning;
 
 namespace BaGet.Core
 {
@@ -11,6 +12,7 @@ namespace BaGet.Core
     public class NullSearchService : ISearchService
     {
         private static readonly IReadOnlyList<string> EmptyStringList = new List<string>();
+        private static readonly IReadOnlyList<NuGetVersion> EmptyNuGetVersionList = new List<NuGetVersion>();
 
         private static readonly Task<AutocompleteResponse> EmptyAutocompleteResponseTask =
             Task.FromResult(new AutocompleteResponse
@@ -58,6 +60,11 @@ namespace BaGet.Core
             CancellationToken cancellationToken)
         {
             return EmptySearchResponseTask;
+        }
+
+        public async Task<IReadOnlyList<NuGetVersion>> GetAllVersionsAsync(string packageId, CancellationToken cancellationToken)
+        {
+            return await Task.FromResult(EmptyNuGetVersionList);
         }
     }
 }

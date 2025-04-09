@@ -5,11 +5,14 @@
     <Description>The libraries to host BaGet on AWS.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="3.3.110.20" />
-    <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.104.27" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.416.6" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.401.79" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BaGet.Core\BaGet.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>
 </Project>

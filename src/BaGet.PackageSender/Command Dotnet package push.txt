@@ -1,1 +1,3 @@
 dotnet nuget push -s https://nuget.apnam.ir/v3/index.json -k ali_api_key D:\Source\MongoLogger\Pigi.MDbLogging\bin\Release\MongoLogger.1.9.2.nupkg
+
+dotnet nuget nuget delete -s https://nuget.apnam.ir/v3/index.json -k ali_api_key

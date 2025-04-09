@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace BaGet.Core
 {
     public class BaGetOptions
@@ -10,6 +8,11 @@ namespace BaGet.Core
         /// </summary>
         public string ApiKey { get; set; }
 
+        /// <summary>
+        /// The PageNumber for page package list
+        /// operations. If empty, package operations do not require authentication.
+        /// </summary>
+        public int? PageNumber { get; set; }
         /// <summary>
         /// The application root URL for usage in reverse proxy scenarios.
         /// </summary>

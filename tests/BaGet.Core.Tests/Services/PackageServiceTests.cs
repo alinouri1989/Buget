@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using NuGet.Versioning;
 using Xunit;
@@ -366,6 +368,7 @@ namespace BaGet.Core.Tests
             protected readonly Mock<IPackageDatabase> _db;
             protected readonly Mock<IUpstreamClient> _upstream;
             protected readonly Mock<IPackageIndexingService> _indexer;
+            protected readonly Mock<IOptionsSnapshot<BaGetOptions>> _options;
 
             protected readonly CancellationToken _cancellationToken = CancellationToken.None;
             protected readonly PackageService _target;
@@ -375,12 +378,14 @@ namespace BaGet.Core.Tests
                 _db = new Mock<IPackageDatabase>();
                 _upstream = new Mock<IUpstreamClient>();
                 _indexer = new Mock<IPackageIndexingService>();
+                _options = new Mock<IOptionsSnapshot<BaGetOptions>>();
 
                 _target = new PackageService(
                     _db.Object,
                     _upstream.Object,
                     _indexer.Object,
-                    Mock.Of<ILogger<PackageService>>());
+                    Mock.Of<ILogger<PackageService>>(),
+                    _options.Object);
             }
         }
     }

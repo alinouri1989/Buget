@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using BaGet.Core;
 using BaGet.Protocol.Models;
 using Microsoft.Azure.Cosmos.Table;
+using NuGet.Versioning;
 
 namespace BaGet.Azure
 {
@@ -204,6 +205,11 @@ namespace BaGet.Azure
                     QueryComparisons.Equal,
                     givenValue: false);
             }
+        }
+
+        public Task<IReadOnlyList<NuGetVersion>> GetAllVersionsAsync(string packageId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
     }
 }

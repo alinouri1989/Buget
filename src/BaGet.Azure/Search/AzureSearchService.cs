@@ -8,12 +8,11 @@ using BaGet.Core;
 using BaGet.Protocol.Models;
 using Microsoft.Azure.Search;
 using NuGet.Versioning;
+using QueryType = Microsoft.Azure.Search.Models.QueryType;
+using SearchParameters = Microsoft.Azure.Search.Models.SearchParameters;
 
 namespace BaGet.Azure
 {
-    using QueryType = Microsoft.Azure.Search.Models.QueryType;
-    using SearchParameters = Microsoft.Azure.Search.Models.SearchParameters;
-
     public class AzureSearchService : ISearchService
     {
         private readonly SearchIndexClient _searchClient;
@@ -80,7 +79,7 @@ namespace BaGet.Azure
 
                 results.Add(new SearchResult
                 {
-                    PackageId =  document.Id,
+                    PackageId = document.Id,
                     Version = document.Version,
                     Description = document.Description,
                     Authors = document.Authors,
@@ -220,6 +219,11 @@ namespace BaGet.Azure
             }
 
             return $"searchFilters eq '{searchFilters}'";
+        }
+
+        public Task<IReadOnlyList<NuGetVersion>> GetAllVersionsAsync(string packageId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
     }
 }

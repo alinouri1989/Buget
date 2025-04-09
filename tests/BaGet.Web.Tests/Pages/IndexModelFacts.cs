@@ -1,7 +1,8 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using BaGet.Core;
 using BaGet.Protocol.Models;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -18,12 +19,14 @@ namespace BaGet.Web.Tests
         public IndexModelFacts()
         {
             var search = new Mock<ISearchService>();
+            var package = new Mock<IPackageDeletionService>();
+            var options = new Mock<IOptionsSnapshot<BaGetOptions>>();
             search
                 .Setup(s => s.SearchAsync(It.IsAny<SearchRequest>(), _cancellation))
                 .Callback((SearchRequest r, CancellationToken c) => _capturedRequest = r)
                 .ReturnsAsync(_response);
 
-            _target = new IndexModel(search.Object);
+            _target = new IndexModel(search.Object, package.Object, options.Object);
         }
 
         [Fact]

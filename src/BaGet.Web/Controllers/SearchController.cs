@@ -18,14 +18,14 @@ namespace BaGet.Web
 
         public async Task<ActionResult<SearchResponse>> SearchAsync(
             [FromQuery(Name = "q")] string query = null,
-            [FromQuery]int skip = 0,
-            [FromQuery]int take = 20,
-            [FromQuery]bool prerelease = false,
-            [FromQuery]string semVerLevel = null,
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 20,
+            [FromQuery] bool prerelease = false,
+            [FromQuery] string semVerLevel = null,
 
             // These are unofficial parameters
-            [FromQuery]string packageType = null,
-            [FromQuery]string framework = null,
+            [FromQuery] string packageType = null,
+            [FromQuery] string framework = null,
             CancellationToken cancellationToken = default)
         {
             var request = new SearchRequest
@@ -45,13 +45,13 @@ namespace BaGet.Web
         public async Task<ActionResult<AutocompleteResponse>> AutocompleteAsync(
             [FromQuery(Name = "q")] string autocompleteQuery = null,
             [FromQuery(Name = "id")] string versionsQuery = null,
-            [FromQuery]bool prerelease = false,
-            [FromQuery]string semVerLevel = null,
-            [FromQuery]int skip = 0,
-            [FromQuery]int take = 20,
+            [FromQuery] bool prerelease = false,
+            [FromQuery] string semVerLevel = null,
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 20,
 
             // These are unofficial parameters
-            [FromQuery]string packageType = null,
+            [FromQuery] string packageType = null,
             CancellationToken cancellationToken = default)
         {
             // If only "id" is provided, find package versions. Otherwise, find package IDs.

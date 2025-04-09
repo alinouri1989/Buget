@@ -4,6 +4,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using NuGet.Common;
+using NuGet.Protocol;
+using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 
 namespace BaGet.Core
@@ -14,17 +18,77 @@ namespace BaGet.Core
         private readonly IUpstreamClient _upstream;
         private readonly IPackageIndexingService _indexer;
         private readonly ILogger<PackageService> _logger;
+        private readonly BaGetOptions _options;
 
         public PackageService(
             IPackageDatabase db,
             IUpstreamClient upstream,
             IPackageIndexingService indexer,
-            ILogger<PackageService> logger)
+            ILogger<PackageService> logger,
+            IOptionsSnapshot<BaGetOptions> options)
         {
             _db = db ?? throw new ArgumentNullException(nameof(db));
             _upstream = upstream ?? throw new ArgumentNullException(nameof(upstream));
             _indexer = indexer ?? throw new ArgumentNullException(nameof(indexer));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        }
+
+        public async Task<IReadOnlyList<Package>> SearchMirrorPackagesAsync(
+            string searchTerm,
+            SearchFilter filters,
+            int skip,
+            int take,
+            CancellationToken cancellationToken)
+        {
+            // Check if _options and its properties are initialized  
+            if (_options == null)
+            {
+                throw new InvalidOperationException("Options have not been initialized.");
+            }
+
+            if (_options.Mirror == null || _options.Mirror.PackageSource == null)
+            {
+                throw new InvalidOperationException("Mirror options or package source are not properly configured.");
+            }
+
+            // Initialize the NuGet Source Repository  
+            var sourceRepository = Repository.Factory.GetCoreV3(_options.Mirror.PackageSource.AbsoluteUri, FeedType.HttpV2);
+
+            // Get the search resource  
+            var searchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>();
+            if (searchResource == null)
+            {
+                throw new InvalidOperationException("Failed to retrieve PackageSearchResource from the source repository. Check the source URL and connectivity.");
+            }
+
+            // Perform the search  
+            try
+            {
+                var searchResult = await searchResource.SearchAsync(searchTerm, filters, skip, take, NullLogger.Instance, cancellationToken);
+                if (searchResult == null)
+                {
+                    throw new InvalidOperationException("Search result cannot be null. Check if the search term is correct and if the upstream source is reachable.");
+                }
+
+                // Process the search results  
+                var packages = new List<Package>();
+                foreach (var searchItem in searchResult)
+                {
+                    // Ensure that the package exists before adding  
+                    var package = await FindPackageOrNullAsync(searchItem.Identity.Id, searchItem.Identity.Version, cancellationToken);
+                    if (package != null) // Only add if package is found  
+                    {
+                        packages.Add(package);
+                    }
+                }
+
+                return packages;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An error occurred while searching for packages: {ex.Message}", ex);
+            }
         }
 
         public async Task<IReadOnlyList<NuGetVersion>> FindPackageVersionsAsync(

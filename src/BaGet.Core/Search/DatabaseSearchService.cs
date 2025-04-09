@@ -5,6 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using BaGet.Protocol.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using NuGet.Protocol.Core.Types;
+using NuGet.Versioning;
 
 namespace BaGet.Core
 {
@@ -13,15 +16,21 @@ namespace BaGet.Core
         private readonly IContext _context;
         private readonly IFrameworkCompatibilityService _frameworks;
         private readonly ISearchResponseBuilder _searchBuilder;
+        private readonly IPackageService _packageService;
+        private readonly BaGetOptions _options;
 
         public DatabaseSearchService(
             IContext context,
             IFrameworkCompatibilityService frameworks,
-            ISearchResponseBuilder searchBuilder)
+            ISearchResponseBuilder searchBuilder,
+            IOptionsSnapshot<BaGetOptions> options,
+            IPackageService packageService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _frameworks = frameworks ?? throw new ArgumentNullException(nameof(frameworks));
             _searchBuilder = searchBuilder ?? throw new ArgumentNullException(nameof(searchBuilder));
+            _packageService = packageService;
+            _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
         public async Task<SearchResponse> SearchAsync(SearchRequest request, CancellationToken cancellationToken)
@@ -59,6 +68,25 @@ namespace BaGet.Core
             // the package IDs in a subquery. Otherwise, run two queries:
             //   1. Find the package IDs that match the search
             //   2. Find all package versions for these package IDs
+            if (!packageIds.Any() && request.Query != null && _options.Mirror.Enabled)
+            {
+                var packages = await _packageService.SearchMirrorPackagesAsync(request.Query,
+                                                                         new SearchFilter(request.IncludePrerelease),
+                                                                         request.Skip,
+                                                                         request.Take,
+                                                                         cancellationToken);
+
+                var groupMirrorResults = packages.GroupBy(p => p.Id, StringComparer.OrdinalIgnoreCase)
+                                                 .Select(group => new PackageRegistration(group.Key, group.ToList()))
+                                                 .ToList();
+
+                LogFileExtensions.WriteToFile(groupMirrorResults);
+
+                return _searchBuilder.BuildSearch(groupMirrorResults);
+            }
+
+
+
             if (_context.SupportsLimitInSubqueries)
             {
                 search = _context.Packages.Where(p => packageIds.Contains(p.Id));
@@ -209,6 +237,16 @@ namespace BaGet.Core
             if (framework == null) return null;
 
             return _frameworks.FindAllCompatibleFrameworks(framework);
+        }
+
+        public async Task<IReadOnlyList<NuGetVersion>> GetAllVersionsAsync(string packageId, CancellationToken cancellationToken)
+        {
+            var versions = await _context.Packages
+                .Where(p => p.Id == packageId)
+                .Select(p => p.Version)
+                .ToListAsync(cancellationToken);
+
+            return versions;
         }
     }
 }

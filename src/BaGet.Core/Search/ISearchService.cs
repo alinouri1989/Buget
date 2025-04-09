@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGet.Protocol.Models;
+using NuGet.Versioning;
 
 namespace BaGet.Core
 {
@@ -18,7 +20,7 @@ namespace BaGet.Core
         /// <param name="request">The search request.</param>
         /// <param name="cancellationToken">A token to cancel the task.</param>
         /// <returns>The search response.</returns>
-        Task<SearchResponse> SearchAsync(SearchRequest request, CancellationToken cancellationToken);
+        public Task<SearchResponse> SearchAsync(SearchRequest request, CancellationToken cancellationToken);
 
         /// <summary>
         /// Perform an autocomplete query.
@@ -27,7 +29,7 @@ namespace BaGet.Core
         /// <param name="request">The autocomplete request.</param>
         /// <param name="cancellationToken">A token to cancel the task.</param>
         /// <returns>The autocomplete response.</returns>
-        Task<AutocompleteResponse> AutocompleteAsync(AutocompleteRequest request, CancellationToken cancellationToken);
+        public Task<AutocompleteResponse> AutocompleteAsync(AutocompleteRequest request, CancellationToken cancellationToken);
 
         /// <summary>
         /// Enumerate listed package versions.
@@ -36,7 +38,8 @@ namespace BaGet.Core
         /// <param name="request">The autocomplete request.</param>
         /// <param name="cancellationToken">A token to cancel the task.</param>
         /// <returns>The package versions that matched the request.</returns>
-        Task<AutocompleteResponse> ListPackageVersionsAsync(VersionsRequest request, CancellationToken cancellationToken);
+        public Task<AutocompleteResponse> ListPackageVersionsAsync(VersionsRequest request, CancellationToken cancellationToken);
+        public Task<IReadOnlyList<NuGetVersion>> GetAllVersionsAsync(string packageId, CancellationToken cancellationToken);
 
         /// <summary>
         /// Find the packages that depend on a given package.
@@ -44,7 +47,7 @@ namespace BaGet.Core
         /// <param name="packageId">The package whose dependents should be found.</param>
         /// <param name="cancellationToken">A token to cancel the task.</param>
         /// <returns>The dependents response.</returns>
-        Task<DependentsResponse> FindDependentsAsync(
+        public Task<DependentsResponse> FindDependentsAsync(
             string packageId,
             CancellationToken cancellationToken);
     }
